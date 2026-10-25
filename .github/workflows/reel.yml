@@ -24,6 +24,8 @@ jobs:
     env:
       ENABLED_PRODUCTS: ${{ vars.ENABLED_PRODUCTS || 'handstand' }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      ANTHROPIC_BASE_URL: ${{ secrets.ANTHROPIC_BASE_URL }}
+      CLAUDE_MODEL: ${{ secrets.CLAUDE_MODEL }}
       IG_USER_ID: ${{ secrets.IG_USER_ID }}
       IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
     steps:
