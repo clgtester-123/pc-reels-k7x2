@@ -1,0 +1,59 @@
+name: Daily Reel
+
+on:
+  schedule:
+    - cron: "30 13 * * *"   # once a day, 13:30 UTC (7:00 pm IST)
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Render only (no posting, no commits)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-reel
+  cancel-in-progress: false
+
+jobs:
+  reel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      ENABLED_PRODUCTS: ${{ vars.ENABLED_PRODUCTS || 'handstand' }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      IG_USER_ID: ${{ secrets.IG_USER_ID }}
+      IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -y && sudo apt-get install -y ffmpeg
+          pip install pillow requests
+
+      - name: Configure git
+        run: |
+          git config user.name "reel-bot"
+          git config user.email "reel-bot@users.noreply.github.com"
+
+      - name: Dry run (render only)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        run: python pipeline/run.py --dry-run
+
+      - name: Upload dry-run video for review
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: dry-run-reel
+          path: /tmp/dryrun_*.mp4
+
+      - name: Render, post and log
+        if: ${{ github.event_name == 'schedule' || !inputs.dry_run }}
+        run: python pipeline/run.py
