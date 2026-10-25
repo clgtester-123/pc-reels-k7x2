@@ -5,7 +5,9 @@ import os
 import re
 import requests
 
-MODEL = os.environ.get("CLAUDE_MODEL", "claude-haiku-4-5")
+MODEL = os.environ.get("CLAUDE_MODEL") or "claude-haiku-4-5"
+BASE = (os.environ.get("ANTHROPIC_BASE_URL") or "https://api.anthropic.com").rstrip("/")
+URL = BASE + ("/messages" if BASE.endswith("/v1") else "/v1/messages")
 DISCLAIMER = "General fitness information, not medical advice."
 TAGS = {
     "handstand": "#handstand #calisthenics #handstandprogression #bodyweighttraining #mobility",
@@ -32,8 +34,8 @@ where body is one or two sentences for the caption (no hashtags, no link, no dis
 
 def _call_claude(prompt):
     r = requests.post(
-        "https://api.anthropic.com/v1/messages",
-        headers={"x-api-key": os.environ["ANTHROPIC_API_KEY"], "anthropic-version": "2023-06-01", "content-type": "application/json"},
+        URL,
+        headers={"x-api-key": os.environ["ANTHROPIC_API_KEY"], "Authorization": "Bearer " + os.environ["ANTHROPIC_API_KEY"], "anthropic-version": "2023-06-01", "content-type": "application/json"},
         json={"model": MODEL, "max_tokens": 4000, "messages": [{"role": "user", "content": prompt}]},
         timeout=120,
     )
